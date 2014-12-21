@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# Takes gateways IP and MAC
+# Prints good ARP replys to stdout and spoofing attacks to stderr
+
+import sys
+import subprocess as sub
+import re
+
+
+def main(stdin):
+    gateway_ip = sys.argv[1]
+    gateway_mac = sys.argv[2]
+
+    for result in filter_input(stdin, gateway_ip, gateway_mac):
+        kind, data = result
+        if kind == "ok":
+            print("OK\t({}): {}".format(*data))
+        else: #spoofed
+            print("SPOOFED\t({}): {} -> {}".format(*data),
+                    file=sys.stderr)
+            
+def filter_input(stdin, gateway_ip, gateway_mac):
+    for line in stdin:
+        if re.match(".*Reply.*", line):
+            # 22:57:19.552929 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
+            _, _, _, ip, _, mac, _, _ = line.split(" ")
+            mac = mac[:-1] # strip comma
+            # print(ip, "\t", mac)
+            if ip == gateway_ip:
+                if mac == gateway_mac:
+                    yield ("ok", (ip, mac))
+                else:
+                    yield ("spoofed", (ip, gateway_mac, mac))
+
+def tests():
+    import io
+    stdin = io.StringIO(example_tcpdump_output)
+    ip = "10.11.7.1"
+    mac = "00:0d:b9:20:d3:50"
+    assert [e for e in filter_input(stdin, ip, mac)] \
+        == [
+            ("ok", (ip, mac)),
+            ("spoofed", (ip, mac, "00:0d:b9:20:d3:51"))
+        ]
+
+example_tcpdump_output="""
+22:56:45.393057 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
+22:56:48.414804 ARP, Request who-has 10.11.7.12 tell 10.11.7.1, length 46
+22:56:54.431218 ARP, Request who-has 10.11.7.1 tell 10.11.7.37, length 28
+22:56:54.434151 ARP, Reply 10.11.7.1 is-at 00:0d:b9:20:d3:50, length 46
+22:57:19.552895 ARP, Request who-has 10.11.7.37 tell 10.11.7.1, length 46
+22:57:19.552929 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
+22:57:46.218422 ARP, Request who-has 10.11.7.36 tell 10.11.7.1, length 46
+22:57:53.933468 ARP, Request who-has 10.11.7.18 tell 10.11.7.18, length 46
+22:57:54.076745 ARP, Request who-has 10.11.7.1 tell 10.11.7.18, length 46
+22:57:54.097393 ARP, Request who-has 169.254.255.255 tell 10.11.7.18, length 46
+22:57:54.240481 ARP, Request who-has 10.11.7.1 tell 10.11.7.18, length 46
+22:56:54.434151 ARP, Reply 10.11.7.1 is-at 00:0d:b9:20:d3:51, length 46
+22:57:54.260815 ARP, Request who-has 10.11.7.1 tell 10.11.7.15, length 28
+22:57:54.895466 ARP, Request who-has 169.254.255.255 tell 10.11.7.18, length 46
+22:57:55.168765 ARP, Request who-has 10.11.7.37 tell 10.11.7.1, length 46
+22:57:55.168793 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
+22:57:55.386698 ARP, Request who-has 169.254.255.255 tell 10.11.7.18, length 46
+22:57:56.696669 ARP, Request who-has 10.11.7.63 tell 10.11.7.1, length 46
+22:58:08.077858 ARP, Request who-has 10.11.7.36 tell 10.11.7.37, length 28
+22:58:08.161225 ARP, Reply 10.11.7.36 is-at 04:46:65:47:b6:4a, length 28
+"""
+
+if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "test":
+        tests()
+    else:
+        main(sys.stdin)
