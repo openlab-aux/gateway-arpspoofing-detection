@@ -1,0 +1,5 @@
+= Gateway ARPspoofing detection
+
+`check_arp_replies` detects if someone in the subnet spreads wrong information about MAC addresses of the specified client (you may want to use it to check no one redirects traffig from the gateway). Feed it with tcpdump output.
+
+`arpspoofing-to-irc` is a simple helper that connects to a https://github.com/muesli/beehive[beehive] instance running `beehive.conf`, which alerts an IRC channel (`#augsburg` on `freenode` default) if things go bad.
