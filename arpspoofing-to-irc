@@ -1,12 +1,14 @@
 #!/bin/bash
 
+
 GATEWAY_IP="$1"
 GATEWAY_MAC="$2"
-BEEHIVE_PORT="$3"
+INTERFACE_NAME="$3"
+BEEHIVE_PORT="$4"
 
 SCRIPT_PATH="$(dirname `which $0`)"
 
-cat testoutput \
+sudo tcpdump -i "$INTERFACE_NAME" -n arp \
     | "$SCRIPT_PATH/check_arp_replies" "$GATEWAY_IP" "$GATEWAY_MAC" 2>&1 1>/dev/null \
     | (
         read stdin
