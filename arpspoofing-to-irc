@@ -6,8 +6,6 @@ BEEHIVE_PORT="$3"
 
 SCRIPT_PATH="$(dirname `which $0`)"
 
-set -x
-
 cat testoutput \
     | "$SCRIPT_PATH/check_arp_replies" "$GATEWAY_IP" "$GATEWAY_MAC" 2>&1 1>/dev/null \
     | (
