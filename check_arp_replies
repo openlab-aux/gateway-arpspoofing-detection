@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Wants `tcpdump -i <interface> -n arp` output on stdin
 # Takes gateways IP and MAC
 # Prints good ARP replys to stdout and spoofing attacks to stderr
 
