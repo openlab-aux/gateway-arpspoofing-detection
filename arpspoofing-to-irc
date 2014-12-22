@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 GATEWAY_IP="$1"
 GATEWAY_MAC="$2"
 INTERFACE_NAME="$3"
@@ -8,9 +7,11 @@ BEEHIVE_PORT="$4"
 
 SCRIPT_PATH="$(dirname `which $0`)"
 
-sudo tcpdump -i "$INTERFACE_NAME" -n arp \
-    | "$SCRIPT_PATH/check_arp_replies" "$GATEWAY_IP" "$GATEWAY_MAC" 2>&1 1>/dev/null \
-    | (
-        read stdin
-        wget "localhost:$BEEHIVE_PORT/?message=$stdin"
-    )
+sudo tcpdump -l -i "$INTERFACE_NAME" -n 2>/dev/null \
+    | "$SCRIPT_PATH/check_arp_replies" "$GATEWAY_IP" "$GATEWAY_MAC" | sed -une"/SPOOFED/p" \
+    | while read line ; do
+        wget -qO- "localhost:$BEEHIVE_PORT/?message=$line"
+        echo "$line"
+      done
+
+    #arp 2>/dev/null \
