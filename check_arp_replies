@@ -7,6 +7,11 @@ import sys
 import subprocess as sub
 import re
 
+TCPDUMP_ARP_RE = re.compile(
+    # 22:57:19.552929 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
+    r'ARP, +Reply +(?P<ip>[0-9a-fA-F:.]+) +is-at +(?P<mac>[0-9a-fA-F:]+)'
+)
+
 
 def main(stdin):
     gateway_ip = sys.argv[1]
@@ -18,22 +23,18 @@ def main(stdin):
             print("OK\t({}): {}".format(*data), flush=True)
         else: #spoofed
             print("SPOOFED\t({}): {} -> {}".format(*data), flush=True)
-            
+
 def filter_input(stdin, gateway_ip, gateway_mac):
     for line in stdin:
-        if re.match(".*ARP.*Reply.*is-at.*", line):
-            # 22:57:19.552929 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
-            try:
-                _, _, _, ip, _, mac, _, _ = line.split(" ")
-            except ValueError as e:
-                print("Output mismatch: " + line, file=sys.stderr)
-            mac = mac[:-1] # strip comma
-            # print(ip, "\t", mac)
-            if ip == gateway_ip:
-                if mac == gateway_mac:
-                    yield ("ok", (ip, mac))
-                else:
-                    yield ("spoofed", (ip, gateway_mac, mac))
+        match = TCPDUMP_ARP_RE.search(line)
+        if match is None:
+            continue
+        ip, mac = match.group('ip', 'mac')
+        if ip == gateway_ip:
+            if mac == gateway_mac:
+                yield ("ok", (ip, mac))
+            else:
+                yield ("spoofed", (ip, gateway_mac, mac))
 
 def tests():
     import io
