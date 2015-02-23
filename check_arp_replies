@@ -7,10 +7,10 @@ import sys
 import subprocess as sub
 import re
 
-TCPDUMP_ARP_RE = re.compile(
+TCPDUMP_ARP_RE = re.compile((
     # 22:57:19.552929 ARP, Reply 10.11.7.37 is-at 00:21:6a:0c:d2:e6, length 28
-    r'ARP, +Reply +(?P<ip>[0-9a-fA-F:.]+) +is-at +(?P<mac>[0-9a-fA-F:]+)'
-)
+    r'ARP, +Reply +(?P<ip>XX(?:[:.]XX){3,7}) +is-at +(?P<mac>XX(?::XX){5}),'
+).replace('XX', '[0-9a-fA-F]{,4}'))
 
 
 def main(stdin):
